@@ -27,7 +27,9 @@ func (ia *IntArr) Sort() {
 func (ia *IntArr) OrderedAppend(hash int) {
 	ia.mu.Lock()
 	i := sort.SearchInts(ia.arr, hash)
-	ia.arr = append(ia.arr[:i], append([]int{hash}, ia.arr[i:]...)...)
+	ia.arr = append(ia.arr, 0 /* use the zero value of the element type */)
+	copy(ia.arr[i+1:], ia.arr[i:])
+	ia.arr[i] = hash
 	ia.mu.Unlock()
 }
 func (ia *IntArr) WarningUnorderedAppend(hash int) {
@@ -81,7 +83,9 @@ func (hs *HashSearch) OrderedAppendBytes(item []byte) {
 
 	hs.mu.Lock()
 	i := sort.SearchInts(hs.hashes, int(numericHash))
-	hs.hashes = append(hs.hashes[:i], append([]int{int(numericHash)}, hs.hashes[i:]...)...)
+	hs.hashes = append(hs.hashes, 0 /* use the zero value of the element type */)
+	copy(hs.hashes[i+1:], hs.hashes[i:])
+	hs.hashes[i] = int(numericHash)
 	hs.mu.Unlock()
 }
 func (hs *HashSearch) Has(item string) bool {
