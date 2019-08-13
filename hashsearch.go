@@ -7,6 +7,48 @@ import (
 	"sync"
 )
 
+type IntArr struct {
+	mu  *sync.RWMutex
+	arr []int
+}
+
+func NewIntArr() *IntArr {
+	return &IntArr{
+		mu: &sync.RWMutex{},
+	}
+}
+
+func (ia *IntArr) Sort() {
+	ia.mu.Lock()
+	sort.Ints(ia.arr)
+	ia.mu.Unlock()
+}
+
+func (ia *IntArr) OrderedAppend(hash int) {
+	ia.mu.Lock()
+	i := sort.SearchInts(ia.arr, hash)
+	ia.arr = append(ia.arr[:i], append([]int{hash}, ia.arr[i:]...)...)
+	ia.mu.Unlock()
+}
+func (ia *IntArr) WarningUnorderedAppend(hash int) {
+	ia.mu.Lock()
+	ia.arr = append(ia.arr, hash)
+	ia.mu.Unlock()
+}
+func (ia *IntArr) Has(hash int) bool {
+	ia.mu.RLock()
+	index := sort.SearchInts(ia.arr, int(hash))
+	if index == len(ia.arr) {
+		ia.mu.RUnlock()
+		return false
+	}
+	has := int(hash) == ia.arr[index]
+	ia.mu.RUnlock()
+	return has
+}
+
+//////////////
+
 type HashSearch struct {
 	mu     *sync.RWMutex
 	hashes []int
@@ -18,8 +60,11 @@ func New() *HashSearch {
 	}
 }
 func (hs *HashSearch) WarningUnorderedAppend(item string) {
+	hs.WarningUnorderedAppendBytes([]byte(item))
+}
+func (hs *HashSearch) WarningUnorderedAppendBytes(item []byte) {
 	hs.mu.Lock()
-	hs.hashes = append(hs.hashes, int(doHash(item)))
+	hs.hashes = append(hs.hashes, int(hashBytes(item)))
 	hs.mu.Unlock()
 }
 func (hs *HashSearch) Sort() {
@@ -29,16 +74,21 @@ func (hs *HashSearch) Sort() {
 }
 
 func (hs *HashSearch) OrderedAppend(item string) {
-	numericHash := doHash(item)
+	hs.OrderedAppendBytes([]byte(item))
+}
+func (hs *HashSearch) OrderedAppendBytes(item []byte) {
+	numericHash := hashBytes(item)
 
 	hs.mu.Lock()
 	i := sort.SearchInts(hs.hashes, int(numericHash))
 	hs.hashes = append(hs.hashes[:i], append([]int{int(numericHash)}, hs.hashes[i:]...)...)
 	hs.mu.Unlock()
 }
-
 func (hs *HashSearch) Has(item string) bool {
-	numericHash := doHash(item)
+	return hs.HasBytes([]byte(item))
+}
+func (hs *HashSearch) HasBytes(item []byte) bool {
+	numericHash := hashBytes(item)
 
 	hs.mu.RLock()
 	index := sort.SearchInts(hs.hashes, int(numericHash))
@@ -60,12 +110,15 @@ func init() {
 		},
 	}
 }
-func doHash(s string) uint64 {
+func hashString(s string) uint64 {
+	return hashBytes([]byte(s))
+}
+func hashBytes(b []byte) uint64 {
 	h := hasherPool.Get().(hash.Hash64)
 
 	defer hasherPool.Put(h)
 	h.Reset()
-	_, err := h.Write([]byte(s))
+	_, err := h.Write(b)
 	if err != nil {
 		panic(err)
 	}
