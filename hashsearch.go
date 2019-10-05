@@ -66,7 +66,7 @@ func (hs *HashSearch) WarningUnorderedAppend(item string) {
 }
 func (hs *HashSearch) WarningUnorderedAppendBytes(item []byte) {
 	hs.mu.Lock()
-	hs.hashes = append(hs.hashes, int(hashBytes(item)))
+	hs.hashes = append(hs.hashes, int(HashBytes(item)))
 	hs.mu.Unlock()
 }
 func (hs *HashSearch) Sort() {
@@ -79,7 +79,7 @@ func (hs *HashSearch) OrderedAppend(item string) {
 	hs.OrderedAppendBytes([]byte(item))
 }
 func (hs *HashSearch) OrderedAppendBytes(item []byte) {
-	numericHash := hashBytes(item)
+	numericHash := HashBytes(item)
 
 	hs.mu.Lock()
 	i := sort.SearchInts(hs.hashes, int(numericHash))
@@ -92,7 +92,7 @@ func (hs *HashSearch) Has(item string) bool {
 	return hs.HasBytes([]byte(item))
 }
 func (hs *HashSearch) HasBytes(item []byte) bool {
-	numericHash := hashBytes(item)
+	numericHash := HashBytes(item)
 
 	hs.mu.RLock()
 	index := sort.SearchInts(hs.hashes, int(numericHash))
@@ -114,10 +114,10 @@ func init() {
 		},
 	}
 }
-func hashString(s string) uint64 {
-	return hashBytes([]byte(s))
+func HashString(s string) uint64 {
+	return HashBytes([]byte(s))
 }
-func hashBytes(b []byte) uint64 {
+func HashBytes(b []byte) uint64 {
 	h := hasherPool.Get().(hash.Hash64)
 
 	defer hasherPool.Put(h)
