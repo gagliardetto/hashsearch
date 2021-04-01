@@ -82,7 +82,7 @@ func (hs *HashSearch) OrderedAppendBytes(item []byte) {
 	numericHash := HashBytes(item)
 
 	hs.mu.Lock()
-	hs.noMutexAppendHash(numericHash)
+	hs.noMutexAddOrderedHash(numericHash)
 	hs.mu.Unlock()
 }
 
@@ -99,19 +99,19 @@ func (hs *HashSearch) HasBytes(item []byte) bool {
 	return has
 }
 
-func (hs *HashSearch) HasOrAppend(item []byte) bool {
+func (hs *HashSearch) HasOrAdd(item []byte) bool {
 	numericHash := HashBytes(item)
 
 	hs.mu.Lock()
 	has := hs.noMutexHas(numericHash)
 	if !has {
-		hs.noMutexAppendHash(numericHash)
+		hs.noMutexAddOrderedHash(numericHash)
 	}
 	hs.mu.Unlock()
 	return has
 }
 
-func (hs *HashSearch) noMutexAppendHash(numericHash uint64) {
+func (hs *HashSearch) noMutexAddOrderedHash(numericHash uint64) {
 	i := sort.SearchInts(hs.hashes, int(numericHash))
 	hs.hashes = append(hs.hashes, 0 /* use the zero value of the element type */)
 	copy(hs.hashes[i+1:], hs.hashes[i:])
