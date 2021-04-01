@@ -120,7 +120,6 @@ func (hs *HashSearch) noMutexAddOrderedHash(numericHash uint64) {
 func (hs *HashSearch) noMutexHas(numericHash uint64) bool {
 	index := sort.SearchInts(hs.hashes, int(numericHash))
 	if index == len(hs.hashes) {
-		hs.mu.Unlock()
 		return false
 	}
 	has := int(numericHash) == hs.hashes[index]
