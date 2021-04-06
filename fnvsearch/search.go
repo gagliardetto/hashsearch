@@ -55,6 +55,21 @@ func HashReader(reader io.Reader) []byte {
 	return h.Sum(nil)
 }
 
+// HashFromWriter returns a hash.Hash obtained from
+// a FNV-1a 128bit hash of the contents written to w.
+func HashFromWriter(callback func(w io.Writer) error) []byte {
+	h := hasherPool128a.Get().(hash.Hash)
+
+	defer hasherPool128a.Put(h)
+	h.Reset()
+
+	if err := callback(h); err != nil {
+		panic(err)
+	}
+
+	return h.Sum(nil)
+}
+
 // SearchByteSlices searches for x in a sorted slice of []byte and returns the index
 // as specified by Search. The return value is the index to insert x if x is not
 // present (it could be len(a)).
