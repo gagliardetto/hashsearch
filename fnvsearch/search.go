@@ -71,85 +71,85 @@ func (p ByteSliceSlice) Len() int           { return len(p) }
 func (p ByteSliceSlice) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) == -1 }
 func (p ByteSliceSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// Searcher is used to track hashes.
-type Searcher struct {
+// Tracker is used to track hashes.
+type Tracker struct {
 	mu     *sync.RWMutex
 	hashes [][]byte
 }
 
-// NewSearcher initializes and returns a new Searcher object.
-func NewSearcher() *Searcher {
-	return &Searcher{
+// New initializes and returns a new Tracker object.
+func New() *Tracker {
+	return &Tracker{
 		mu: &sync.RWMutex{},
 	}
 }
 
 // WARNING_UnsortedAppendHashFromString is a non-safe method that appends (without order considerations)
 // a new hash (obtained by hashing the provided string) to the hash tracker.
-func (hs *Searcher) WARNING_UnsortedAppendHashFromString(item string) {
+func (hs *Tracker) WARNING_UnsortedAppendHashFromString(item string) {
 	hs.WARNING_UnsortedAppendHashFromBytes([]byte(item))
 }
 
 // WARNING_UnsortedAppendHashFromBytes is a non-safe method that appends (without order considerations)
 // a new hash (obtained by hashing the provided byte slice) to the hash tracker.
-func (hs *Searcher) WARNING_UnsortedAppendHashFromBytes(item []byte) {
+func (hs *Tracker) WARNING_UnsortedAppendHashFromBytes(item []byte) {
 	hs.WARNING_UnsortedAppendHash(HashBytes(item))
 }
 
 // WARNING_UnsortedAppendHash is a non-safe method that appends (without order considerations)
 // a new hash to the hash tracker.
-func (hs *Searcher) WARNING_UnsortedAppendHash(hash []byte) {
+func (hs *Tracker) WARNING_UnsortedAppendHash(hash []byte) {
 	hs.mu.Lock()
 	hs.hashes = append(hs.hashes, hash)
 	hs.mu.Unlock()
 }
 
 // Sort sorts the hash tracker slice.
-func (hs *Searcher) Sort() {
+func (hs *Tracker) Sort() {
 	hs.mu.Lock()
 	sort.Sort(ByteSliceSlice(hs.hashes))
 	hs.mu.Unlock()
 }
 
 // AddFromString adds a new hash obtained from hashing the provided string.
-func (hs *Searcher) AddFromString(item string) {
+func (hs *Tracker) AddFromString(item string) {
 	hs.AddFromBytes([]byte(item))
 }
 
 // AddFromBytes adds a new hash obtained from hashing the provided byte slice.
-func (hs *Searcher) AddFromBytes(item []byte) {
+func (hs *Tracker) AddFromBytes(item []byte) {
 	hs.AddHash(HashBytes(item))
 }
 
 // AddFromReader adds a new hash obtained from hashing the contents of the provided io.Reader.
-func (hs *Searcher) AddFromReader(reader io.Reader) {
+func (hs *Tracker) AddFromReader(reader io.Reader) {
 	hs.AddHash(HashReader(reader))
 }
 
 // AddHash adds the provided hash to the hash tracker.
-func (hs *Searcher) AddHash(hash []byte) {
+func (hs *Tracker) AddHash(hash []byte) {
 	hs.mu.Lock()
 	hs.noMutexAddSortedHash(hash)
 	hs.mu.Unlock()
 }
 
 // HasString returns true if the hash tracker contains the hash of the provided string.
-func (hs *Searcher) HasString(item string) bool {
+func (hs *Tracker) HasString(item string) bool {
 	return hs.HasBytes([]byte(item))
 }
 
 // HasBytes returns true if the hash tracker contains the hash of the provided byte slice.
-func (hs *Searcher) HasBytes(item []byte) bool {
+func (hs *Tracker) HasBytes(item []byte) bool {
 	return hs.HasByHash(HashBytes(item))
 }
 
 // HasFromreader returns true if the hash tracker contains the hash of the contents of the provided io.Reader.
-func (hs *Searcher) HasFromreader(reader io.Reader) bool {
+func (hs *Tracker) HasFromreader(reader io.Reader) bool {
 	return hs.HasByHash(HashReader(reader))
 }
 
 // HasByHash returns true if the hash tracker contains the provided hash.
-func (hs *Searcher) HasByHash(hash []byte) bool {
+func (hs *Tracker) HasByHash(hash []byte) bool {
 	hs.mu.RLock()
 	has := hs.noMutexHas(hash)
 	hs.mu.RUnlock()
@@ -158,25 +158,25 @@ func (hs *Searcher) HasByHash(hash []byte) bool {
 
 // HasOrAddFromString returns true if the hash tracker contains the hash of the provided string;
 // if it does not, then the hash will be added.
-func (hs *Searcher) HasOrAddFromString(item string) bool {
+func (hs *Tracker) HasOrAddFromString(item string) bool {
 	return hs.HasOrAddHash(HashString(item))
 }
 
 // HasOrAddFromBytes returns true if the hash tracker contains the hash of the provided byte slice;
 // if it does not, then the hash will be added.
-func (hs *Searcher) HasOrAddFromBytes(item []byte) bool {
+func (hs *Tracker) HasOrAddFromBytes(item []byte) bool {
 	return hs.HasOrAddHash(HashBytes(item))
 }
 
 // HasOrAddFromReader returns true if the hash tracker contains the hash of the contents of the provided io.Reader;
 // if it does not, then the hash will be added.
-func (hs *Searcher) HasOrAddFromReader(reader io.Reader) bool {
+func (hs *Tracker) HasOrAddFromReader(reader io.Reader) bool {
 	return hs.HasOrAddHash(HashReader(reader))
 }
 
 // HasOrAddHash returns true if the hash tracker contains the provided hash;
 // if it does not, then the hash will be added.
-func (hs *Searcher) HasOrAddHash(hash []byte) bool {
+func (hs *Tracker) HasOrAddHash(hash []byte) bool {
 	hs.mu.Lock()
 	has := hs.noMutexHas(hash)
 	if !has {
@@ -186,14 +186,14 @@ func (hs *Searcher) HasOrAddHash(hash []byte) bool {
 	return has
 }
 
-func (hs *Searcher) noMutexAddSortedHash(hash []byte) {
+func (hs *Tracker) noMutexAddSortedHash(hash []byte) {
 	i := SearchByteSlices(hs.hashes, hash)
 	hs.hashes = append(hs.hashes, nil /* use the zero value of the element type */)
 	copy(hs.hashes[i+1:], hs.hashes[i:])
 	hs.hashes[i] = hash
 }
 
-func (hs *Searcher) noMutexHas(hash []byte) bool {
+func (hs *Tracker) noMutexHas(hash []byte) bool {
 	index := SearchByteSlices(hs.hashes, hash)
 	if index == len(hs.hashes) {
 		return false
