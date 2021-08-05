@@ -95,14 +95,15 @@ type Tracker struct {
 // New initializes and returns a new Tracker object.
 func New() *Tracker {
 	return &Tracker{
-		mu: &sync.RWMutex{},
+		mu:     &sync.RWMutex{},
+		hashes: make([][]byte, 0),
 	}
 }
 
 // WARNING_UnsortedAppendHashFromString is a non-safe method that appends (without order considerations)
 // a new hash (obtained by hashing the provided string) to the hash tracker.
 func (hs *Tracker) WARNING_UnsortedAppendHashFromString(item string) {
-	hs.WARNING_UnsortedAppendHashFromBytes([]byte(item))
+	hs.WARNING_UnsortedAppendHash(HashString(item))
 }
 
 // WARNING_UnsortedAppendHashFromBytes is a non-safe method that appends (without order considerations)
@@ -128,7 +129,7 @@ func (hs *Tracker) Sort() {
 
 // AddFromString adds a new hash obtained from hashing the provided string.
 func (hs *Tracker) AddFromString(item string) {
-	hs.AddFromBytes([]byte(item))
+	hs.AddHash(HashString(item))
 }
 
 // AddFromBytes adds a new hash obtained from hashing the provided byte slice.
@@ -150,7 +151,7 @@ func (hs *Tracker) AddHash(hash []byte) {
 
 // HasString returns true if the hash tracker contains the hash of the provided string.
 func (hs *Tracker) HasString(item string) bool {
-	return hs.HasBytes([]byte(item))
+	return hs.HasByHash(HashString(item))
 }
 
 // HasBytes returns true if the hash tracker contains the hash of the provided byte slice.
@@ -158,8 +159,8 @@ func (hs *Tracker) HasBytes(item []byte) bool {
 	return hs.HasByHash(HashBytes(item))
 }
 
-// HasFromreader returns true if the hash tracker contains the hash of the contents of the provided io.Reader.
-func (hs *Tracker) HasFromreader(reader io.Reader) bool {
+// HasFromReader returns true if the hash tracker contains the hash of the contents of the provided io.Reader.
+func (hs *Tracker) HasFromReader(reader io.Reader) bool {
 	return hs.HasByHash(HashReader(reader))
 }
 

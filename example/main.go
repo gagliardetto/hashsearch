@@ -8,36 +8,21 @@ import (
 )
 
 func main() {
-	arr := hashsearch.NewIntArr()
+	arr := hashsearch.NewInt()
 
-	arr.Sort()
-	arr.OrderedAppend(1)
+	arr.Add(1)
 	spew.Dump(arr)
 
-	arr.WarningUnorderedAppend(10)
-	arr.WarningUnorderedAppend(9)
-	arr.WarningUnorderedAppend(8)
+	arr.Add(1)
 	spew.Dump(arr)
 
-	arr.Sort()
+	arr.Add(7)
 	spew.Dump(arr)
 
-	arr.WarningUnorderedAppend(0)
+	arr.Add(7)
 	spew.Dump(arr)
 
-	arr.Sort()
-	spew.Dump(arr)
-
-	arr.OrderedAppend(1)
-	spew.Dump(arr)
-
-	arr.OrderedAppend(7)
-	spew.Dump(arr)
-
-	arr.OrderedAppend(7)
-	spew.Dump(arr)
-
-	arr.OrderedAppend(6)
+	arr.Add(6)
 	spew.Dump(arr)
 
 	fmt.Println(arr.Has(11))
